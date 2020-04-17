@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Oracle.ManagedDataAccess.Client;
 
 namespace OracleDbClient
 {
@@ -23,6 +24,25 @@ namespace OracleDbClient
         public MainWindow()
         {
             InitializeComponent();
+
+            // create connection
+            OracleConnection con = new OracleConnection();
+
+            // create connection string using builder
+            OracleConnectionStringBuilder ocsb = new OracleConnectionStringBuilder();
+            ocsb.Password = "123456";
+            ocsb.UserID = "c##test";
+            //SELECT host_name FROM v$instance;
+            //SELECT value FROM v$parameter WHERE name like '%service_name%';
+            ocsb.DataSource = "SampleDataSource";
+
+            // connect
+            con.ConnectionString = ocsb.ConnectionString;
+            con.Open();
+            Console.WriteLine("Connection established (" + con.ServerVersion + ")");
+
+            con.Close();
+            con.Dispose();
         }
     }
 }
