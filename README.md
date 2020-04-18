@@ -59,7 +59,7 @@ This is client for oracle database written on C#.
 | id | NUMBER (\*,0) |	Идентификатор пользователя |
 | user_name | VARCHAR2(50 BYTE) |	Имя пользователя |
 | user_role | NUMBER (\*,0) |	Описание роли (1-менеджер склада, 2-директор, 3-пользователь) |
-| user_password | VARCHAR2(500 BYTE) |	Пароль. Зашифрован |
+| user_password | VARCHAR2(500 BYTE) |	Пароль. Зашифрован SHA256 |
 
 **Примечание.**
 Все поля с именем id являются автоматически инкрементируемыми первичными ключами. Поля с 
