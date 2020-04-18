@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,6 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Oracle.ManagedDataAccess.Client;
+using System.Security.Cryptography;
 
 namespace OracleDbClient
 {
@@ -24,25 +26,42 @@ namespace OracleDbClient
         public MainWindow()
         {
             InitializeComponent();
+            
 
-            // create connection
-            OracleConnection con = new OracleConnection();
+        }
 
-            // create connection string using builder
-            OracleConnectionStringBuilder ocsb = new OracleConnectionStringBuilder();
-            ocsb.Password = "123456";
-            ocsb.UserID = "c##test";
-            //SELECT host_name FROM v$instance;
-            //SELECT value FROM v$parameter WHERE name like '%service_name%';
-            ocsb.DataSource = "SampleDataSource";
+        public static string getHashSha256(string text)
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes(text);
+            SHA256Managed hashstring = new SHA256Managed();
+            byte[] hash = hashstring.ComputeHash(bytes);
+            string hashString = string.Empty;
+            foreach (byte x in hash)
+            {
+                hashString += String.Format("{0:x2}", x);
+            }
+            return hashString;
+        }
 
-            // connect
-            con.ConnectionString = ocsb.ConnectionString;
-            con.Open();
-            Console.WriteLine("Connection established (" + con.ServerVersion + ")");
-
-            con.Close();
-            con.Dispose();
+        private void Login_Button_Click(object sender, RoutedEventArgs e)
+        {
+            string hashedPassword = getHashSha256(password.Password);
+            OracleCommand command = new OracleCommand(
+                string.Format(
+                    "SELECT * FROM USERS_LIST WHERE USER_NAME = '{0}' and USER_PASSWORD = '{1}'",
+                    userName.Text, hashedPassword
+                )
+            );
+            command.Connection = OracleDbManager.GetConnection();
+            var oraReader = command.ExecuteReader();
+            if (oraReader.HasRows)
+            {
+                MessageBox.Show("Вы вошли!!!");
+            }
+            else
+            {
+                MessageBox.Show("Неверный логин или пароль");
+            }
         }
     }
 }
