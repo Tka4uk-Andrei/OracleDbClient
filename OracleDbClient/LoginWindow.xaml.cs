@@ -19,15 +19,13 @@ using System.Security.Cryptography;
 namespace OracleDbClient
 {
     /// <summary>
-    /// Логика взаимодействия для MainWindow.xaml
+    /// Логика взаимодействия для LoginWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class LoginWindow : Window
     {
-        public MainWindow()
+        public LoginWindow()
         {
             InitializeComponent();
-            
-
         }
 
         public static string getHashSha256(string text)
@@ -56,7 +54,8 @@ namespace OracleDbClient
             var oraReader = command.ExecuteReader();
             if (oraReader.HasRows)
             {
-                MessageBox.Show("Вы вошли!!!");
+                (new ManagerWindow()).Show();
+                this.Close();
             }
             else
             {
