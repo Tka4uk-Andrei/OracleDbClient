@@ -27,13 +27,20 @@ namespace OracleDbClient
         }
 
         private string oldName;
+        private List<Good> goods;
+        private 
+
+        private Dictionary<int, string> goodsDictionary;
+
 
         public ManagerWindow()
         {
             InitializeComponent();
 
-            UpdateView();
+            UpdateGoodsTableView();
         }
+
+        #region GoodsView
 
         private void OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -106,7 +113,7 @@ namespace OracleDbClient
                 MessageBox.Show("Имена товаров должны быть уникальными");
             }
 
-            UpdateView();
+            UpdateGoodsTableView();
         }
 
         private void AddValBtn_Click(object sender, RoutedEventArgs e)
@@ -118,7 +125,7 @@ namespace OracleDbClient
                 return;
             }
 
-            OracleCommand command = new OracleCommand( 
+            OracleCommand command = new OracleCommand(
                 String.Format(
                     "INSERT INTO GOODS (NAME, PRIORITY) VALUES('{0}', {1})",
                     goodNameTextBox.Text, priority
@@ -126,23 +133,24 @@ namespace OracleDbClient
             command.Connection = OracleDbManager.GetConnection();
             var oraReader = command.ExecuteReader();
 
-            UpdateView();
+            UpdateGoodsTableView();
         }
 
-        private void UpdateView()
+        private void UpdateGoodsTableView()
         {
             var command = new OracleCommand("SELECT NAME, PRIORITY FROM GOODS ORDER BY NAME, PRIORITY DESC");
             command.Connection = OracleDbManager.GetConnection();
             var oraReader = command.ExecuteReader();
 
-            List<Good> goods = new List<Good>();
+            goods = new List<Good>();
             if (oraReader.HasRows)
             {
                 while (oraReader.Read())
                 {
                     Good good = new Good();
-                    good.Name = oraReader.GetString(0);
-                    good.Priority = oraReader.GetInt32(1);
+                    good.Name = oraReader.GetString(1);
+                    good.Priority = oraReader.GetInt32(2);
+                    goodsDictionary.Add(oraReader.GetInt32(0), good.Name);
                     goods.Add(good);
                 }
 
@@ -150,5 +158,26 @@ namespace OracleDbClient
 
             goodsList.ItemsSource = goods;
         }
+
+        #endregion
+
+        #region Wharehouse1
+
+
+
+        #endregion
+
+        #region Wharehouse2
+
+
+
+        #endregion
+
+
+        #region AnalyticsView
+
+        
+
+        #endregion
     }
 }

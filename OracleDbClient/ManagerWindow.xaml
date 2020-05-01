@@ -14,7 +14,7 @@
                         <ColumnDefinition Width="481*"/>
                         <ColumnDefinition Width="305*"/>
                     </Grid.ColumnDefinitions>
-                    <DataGrid x:Name="goodsList" Margin="10,10,5,10" SelectionChanged="OnSelectionChanged" SelectionMode="Single">
+                    <DataGrid x:Name="goodsList" Margin="0,0,10,0" SelectionChanged="OnSelectionChanged" SelectionMode="Single">
                     </DataGrid>
                     <TextBlock Grid.Column="1" HorizontalAlignment="Left" Margin="5,23,0,0" TextWrapping="Wrap" Text="Имя товара" VerticalAlignment="Top" Width="290"/>
                     <TextBox x:Name="goodNameTextBox" Height="23" Margin="5,44,10,0" TextWrapping="Wrap" VerticalAlignment="Top" Grid.Column="1" TextChanged="GoodNameTextBox_TextChanged"  />
@@ -25,6 +25,22 @@
                 </Grid>
             </TabItem>
             <TabItem Header="Sales" Height="22" VerticalAlignment="Top">
+                <Grid Background="#FFE5E5E5"/>
+            </TabItem>
+            <TabItem Header="Wharehouse 1 (Regional)" Height="22" VerticalAlignment="Top">
+                <Grid Background="#FFE5E5E5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="244*"/>
+                        <ColumnDefinition Width="133*"/>
+                    </Grid.ColumnDefinitions>
+                    <DataGrid Margin="0,0,10,0"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Wharehouse 2 (SPB)" Height="22" VerticalAlignment="Top">
+                <Grid Background="#FFE5E5E5">
+                </Grid>
+            </TabItem>
+            <TabItem Header="Analytics" Height="22" VerticalAlignment="Top">
                 <Grid Background="#FFE5E5E5"/>
             </TabItem>
         </TabControl>
