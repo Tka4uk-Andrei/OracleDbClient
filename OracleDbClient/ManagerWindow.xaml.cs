@@ -441,9 +441,6 @@ namespace OracleDbClient
         #region AnalyticsView
 
 
-
         #endregion
-
-
     }
 }
