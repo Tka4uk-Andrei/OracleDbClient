@@ -49,7 +49,14 @@
                         <ColumnDefinition Width="244*"/>
                         <ColumnDefinition Width="133*"/>
                     </Grid.ColumnDefinitions>
-                    <DataGrid x:Name="wh2DataList" Margin="0,0,10,0"/>
+                    <DataGrid x:Name="wh2DataList" Margin="0,0,10,0" SelectionChanged="OnWh2SelectionChanged" IsReadOnly="True"/>
+                    <TextBlock Grid.Column="1" Margin="10,10,10,0" TextWrapping="Wrap" Text="Название позиции на складе" VerticalAlignment="Top" Height="23"/>
+                    <ComboBox x:Name="wh2GoodCmbBox" Grid.Column="1" Margin="10,38,10,0" VerticalAlignment="Top" SelectionChanged="Wh1GoodDescriptionChanged" />
+                    <TextBlock Grid.Column="1" Margin="10,65,10,0" TextWrapping="Wrap" Text="Количество товара" VerticalAlignment="Top" Height="23"/>
+                    <TextBox x:Name="wh2GoodCountTxtBox" Grid.Column="1" Height="23" Margin="10,88,10,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" TextChanged="Wh2GoodDescriptionChanged"/>
+                    <Button x:Name="addToWh2Btn" Content="Добавить товар на склад" Visibility="Hidden" Grid.Column="1" Margin="10,0,10,78" Height="29" VerticalAlignment="Bottom" Click="AddToWh2Btn_Click"/>
+                    <Button x:Name="updatePositionWh2Btn" Content="Обновить данные" Visibility="Hidden" Grid.Column="1" Height="29" Margin="10,0,10,44" VerticalAlignment="Bottom" Click="UpdatePositionWh2Btn_Click"/>
+                    <Button x:Name="deleteFromWh2Btn"  Content="Удалить позицию" Visibility="Hidden" Grid.Column="1" Margin="10,0,10,10" Height="29" VerticalAlignment="Bottom" Click="DeleteFromWh2Btn_Click"/>
                 </Grid>
             </TabItem>
             <TabItem Header="Analytics" Height="22" VerticalAlignment="Top">
