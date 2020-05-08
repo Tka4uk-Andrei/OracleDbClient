@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -32,10 +33,20 @@ namespace OracleDbClient
             public int Amount { get; set; }
         }
 
+        private class SaleItem
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+            public int Count { get; set; }
+            public DateTime CreateDate { get; set; }
+        }
+
         private string oldName;
         private List<Good> goods;
+        private List<string> goodNames;
         private List<WhItem> wh1Items;
         private List<WhItem> wh2Items;
+        private List<SaleItem> itemsOnSale;
         private Dictionary<int, string> goodsDictionary;
 
         public ManagerWindow()
@@ -45,6 +56,8 @@ namespace OracleDbClient
             UpdateGoodsTableView();
             UpdateWh1View();
             UpdateWh2View();
+            UpdateSalesView();
+
         }
 
         #region GoodsView
@@ -138,6 +151,7 @@ namespace OracleDbClient
             var oraReader = command.ExecuteReader();
 
             goods = new List<Good>();
+            goodNames = new List<string>();
             goodsDictionary = new Dictionary<int, string>();
             if (oraReader.HasRows)
             {
@@ -148,6 +162,7 @@ namespace OracleDbClient
                     good.Priority = oraReader.GetInt32(2);
                     goodsDictionary.Add(oraReader.GetInt32(0), good.Name);
                     goods.Add(good);
+                    goodNames.Add(good.Name);
                 }
 
             }
@@ -230,16 +245,11 @@ namespace OracleDbClient
                 if (good.Name.Equals(goodName))
                 {
                     addToWh1Btn.Visibility = Visibility.Hidden;
+                    deleteFromWh1Btn.Visibility = Visibility.Visible;
                     if (!int.TryParse(wh1GoodCountTxtBox.Text, out count))
-                    {
                         updatePositionWh1Btn.Visibility = Visibility.Hidden;
-                        deleteFromWh1Btn.Visibility = Visibility.Hidden;
-                    }
                     else
-                    {
-                        deleteFromWh1Btn.Visibility = Visibility.Visible;
                         updatePositionWh1Btn.Visibility = Visibility.Visible;
-                    }
                     return;
                 }
             }
@@ -305,7 +315,7 @@ namespace OracleDbClient
             command.Connection = OracleDbManager.GetConnection();
             var oraReader = command.ExecuteReader();
 
-            wh1Items = new List<WhItem>();
+            wh2Items = new List<WhItem>();
             if (oraReader.HasRows)
             {
                 while (oraReader.Read())
@@ -313,7 +323,7 @@ namespace OracleDbClient
                     WhItem whItem = new WhItem();
                     whItem.Name = goodsDictionary[oraReader.GetInt32(0)];
                     whItem.Amount = oraReader.GetInt32(1);
-                    wh1Items.Add(whItem);
+                    wh2Items.Add(whItem);
                 }
 
             }
@@ -324,7 +334,7 @@ namespace OracleDbClient
                 goodsNames.Add(good.Name);
             }
 
-            wh2DataList.ItemsSource = wh1Items;
+            wh2DataList.ItemsSource = wh2Items;
             wh2GoodCmbBox.ItemsSource = goodsNames;
         }
 
@@ -358,28 +368,22 @@ namespace OracleDbClient
 
         private void Wh2GoodDescriptionChanged(object sender, TextChangedEventArgs e)
         {
-            Wh2GoodDescriptionChanged(wh1GoodCmbBox.Text);
+            Wh2GoodDescriptionChanged(wh2GoodCmbBox.Text);
         }
 
         private void Wh2GoodDescriptionChanged(string goodName)
         {
-            WhItem whItem = wh2DataList.SelectedItem as WhItem;
             int count;
-            foreach (var good in wh1Items)
+            foreach (var good in wh2Items)
             {
                 if (good.Name.Equals(goodName))
                 {
                     addToWh2Btn.Visibility = Visibility.Hidden;
+                    deleteFromWh2Btn.Visibility = Visibility.Visible;
                     if (!int.TryParse(wh2GoodCountTxtBox.Text, out count))
-                    {
                         updatePositionWh2Btn.Visibility = Visibility.Hidden;
-                        deleteFromWh2Btn.Visibility = Visibility.Hidden;
-                    }
                     else
-                    {
-                        deleteFromWh2Btn.Visibility = Visibility.Visible;
                         updatePositionWh2Btn.Visibility = Visibility.Visible;
-                    }
                     return;
                 }
             }
@@ -435,11 +439,136 @@ namespace OracleDbClient
             UpdateWh2View();
         }
 
+        #endregion
+
+        #region SalesView
+
+        private void UpdateSalesView()
+        {
+            var command = new OracleCommand("SELECT SALES.ID, GOODS.NAME, SALES.GOOD_COUNT, to_char(SALES.CREATE_DATE, 'DD-MM-YYYY HH24:MI:SS')as Sale_Date FROM SALES, GOODS WHERE GOODS.ID = SALES.GOOD_ID ORDER BY Sale_Date DESC, GOODS.NAME");
+            command.Connection = OracleDbManager.GetConnection();
+            var oraReader = command.ExecuteReader();
+
+            itemsOnSale = new List<SaleItem>();
+            if (oraReader.HasRows)
+            {
+                while (oraReader.Read())
+                {
+                    var itemOnSale = new SaleItem();
+                    itemOnSale.Id = oraReader.GetInt32(0);
+                    itemOnSale.Name = oraReader.GetString(1);
+                    itemOnSale.Count = oraReader.GetInt32(2);
+                    itemOnSale.CreateDate = DateTime.ParseExact(oraReader.GetString(3), "dd-MM-yyyy HH:mm:ss", null);
+                    itemsOnSale.Add(itemOnSale);
+                }
+            }
+
+            salesGoodCmbBox.ItemsSource = goodNames;
+            salesList.ItemsSource = itemsOnSale;
+        }
+
+        private void SalesGoodCmbBox_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            SalesViewUpdate(e.AddedItems[0] as string);
+        }
+
+        private void SaleCountTxtBox_OnTextChanged(object sender, TextChangedEventArgs e)
+        {
+           SalesViewUpdate(salesGoodCmbBox.Text);
+        }
+
+        private void SalesViewUpdate(string goodName)
+        {
+            int count;
+            addToSalesBtn.IsEnabled = false;
+            if (int.TryParse(saleCountTxtBox.Text, out count))
+            {
+                int wh1Count = 0;
+                int wh2Count = 0;
+                addToSalesBtn.Visibility = Visibility.Visible;
+                foreach (var wh1Item in wh1Items)
+                    if (wh1Item.Name == goodName)
+                        wh1Count = wh1Item.Amount;
+
+                foreach (var wh2Item in wh2Items)
+                    if (wh2Item.Name == goodName)
+                        wh2Count = wh2Item.Amount;
+
+                if (wh1Count + wh2Count >= count)
+                    addToSalesBtn.IsEnabled = true;
+            }
+            else
+            {
+                addToSalesBtn.IsEnabled = false;
+            }
+        }
+
+        private void AddToSalesBtn_Click(object sender, RoutedEventArgs e)
+        {
+            int count = int.Parse(saleCountTxtBox.Text);
+            int wh1Count = 0;
+            int wh2Count = 0;
+            foreach (var wh1Item in wh1Items)
+                if (wh1Item.Name == salesGoodCmbBox.Text)
+                    wh1Count = wh1Item.Amount;
+
+            foreach (var wh2Item in wh2Items)
+                if (wh2Item.Name == salesGoodCmbBox.Text)
+                    wh2Count = wh2Item.Amount;
+
+            // add to sales table whiout view update
+            OracleCommand command = new OracleCommand(
+                string.Format(
+                    "INSERT INTO SALES (GOOD_ID, GOOD_COUNT, CREATE_DATE) VALUES((SELECT MAX(ID) FROM GOODS WHERE NAME = '{0}'), {1}, CURRENT_TIMESTAMP)",
+                    salesGoodCmbBox.Text, count
+                ));
+            command.Connection = OracleDbManager.GetConnection();
+            var oraReader = command.ExecuteReader();
+
+            // decide, that we should update only one WH or two we should
+            if (wh2Count >= count)
+            {
+                // update note in spb WH with Wh2 view update
+                command = new OracleCommand(
+                    string.Format(
+                        "UPDATE WAREHOUSE2 SET good_count = {0} where good_id = (SELECT MAX(id) FROM GOODS WHERE NAME = '{1}')",
+                        wh2Count - count, salesGoodCmbBox.Text
+                    ));
+                command.Connection = OracleDbManager.GetConnection();
+                oraReader = command.ExecuteReader();
+                UpdateWh2View();
+            }
+            else
+            {
+                // delete note from spb WH with Wh2 view update
+                command = new OracleCommand(
+                    string.Format(
+                        "DELETE FROM WAREHOUSE2 WHERE GOOD_ID = (SELECT MAX(id) FROM GOODS WHERE NAME = '{0}')",
+                        salesGoodCmbBox.Text
+                    ));
+                command.Connection = OracleDbManager.GetConnection();
+                oraReader = command.ExecuteReader();
+                count = count - wh2Count;
+                UpdateWh2View();
+
+                // update note in regional WH with Wh1 view update
+                command = new OracleCommand(
+                    string.Format(
+                        "UPDATE WAREHOUSE1 SET good_count = {0} where good_id = (SELECT MAX(id) FROM GOODS WHERE NAME = '{1}')",
+                        wh1Count - count, salesGoodCmbBox.Text
+                    ));
+                command.Connection = OracleDbManager.GetConnection();
+                oraReader = command.ExecuteReader();
+                UpdateWh1View();
+            }
+
+            // update sales view after all
+            UpdateSalesView();
+        }
 
         #endregion
 
         #region AnalyticsView
-
 
         #endregion
     }

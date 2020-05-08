@@ -14,7 +14,7 @@
             <ColumnDefinition Width="149*"/>
             <ColumnDefinition Width="115*"/>
         </Grid.ColumnDefinitions>
-        <Button Content="Log in" Margin="10,35,0,0" Click="Login_Button_Click" Height="24" VerticalAlignment="Top" HorizontalAlignment="Left" Width="150" />
+        <Button Content="Log in" Margin="10,35,0,0" Click="Login_Button_Click" Height="24" VerticalAlignment="Top" HorizontalAlignment="Left" Width="150" IsDefault="true" />
         <TextBox x:Name="userName" Margin="165,35,10,0" TextWrapping="Wrap" Height="24" VerticalAlignment="Top" />
         <PasswordBox x:Name="password" Margin="10,35,10,0" Height="24" VerticalAlignment="Top" Grid.Column="1" />
         <TextBlock Margin="165,10,0,0" TextWrapping="Wrap" Text="User name" Height="20" VerticalAlignment="Top"/>
