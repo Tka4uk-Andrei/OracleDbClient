@@ -3,9 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:oxy="clr-namespace:OxyPlot.Wpf;assembly=OxyPlot.Wpf" 
         xmlns:local="clr-namespace:OracleDbClient"
         mc:Ignorable="d"
-        Title="ManagerWindow" MinHeight="450" MinWidth="800">
+        Title="ManagerWindow" MinHeight="600" MinWidth="900" Height="600" Width="900">
     <Grid>
         <TabControl>
             <TabItem Header="Wharehouse 1 (Regional)"  Height="22" VerticalAlignment="Top">
@@ -46,8 +47,8 @@
             <TabItem Header="Goods">
                 <Grid Background="#FFE5E5E5">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="481*"/>
-                        <ColumnDefinition Width="305*"/>
+                        <ColumnDefinition Width="244*"/>
+                        <ColumnDefinition Width="133*"/>
                     </Grid.ColumnDefinitions>
                     <DataGrid x:Name="goodsList" Margin="0,0,10,0" SelectionChanged="OnGoodsSelectionChanged" SelectionMode="Single" IsReadOnly="True">
                     </DataGrid>
@@ -62,19 +63,31 @@
             <TabItem Header="Sales" Height="22" VerticalAlignment="Top">
                 <Grid Background="#FFE5E5E5">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="481*"/>
-                        <ColumnDefinition Width="305*"/>
+                        <ColumnDefinition Width="244*"/>
+                        <ColumnDefinition Width="133*"/>
                     </Grid.ColumnDefinitions>
                     <DataGrid x:Name="salesList" Margin="0,0,10,0" SelectionMode="Single" IsReadOnly="True"/>
                     <TextBlock Grid.Column="1" Margin="10,10,10,0" TextWrapping="Wrap" Text="Название позиции для списания" VerticalAlignment="Top" Height="23"/>
                     <ComboBox x:Name="salesGoodCmbBox" Grid.Column="1" Margin="10,38,10,0" VerticalAlignment="Top" SelectionChanged="SalesGoodCmbBox_OnSelectionChanged" />
                     <TextBlock Grid.Column="1" Margin="10,65,10,0" TextWrapping="Wrap" Text="Количество товара для списания" VerticalAlignment="Top" Height="23"/>
                     <TextBox x:Name="saleCountTxtBox" Grid.Column="1" Height="23" Margin="10,88,10,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" TextChanged="SaleCountTxtBox_OnTextChanged"/>
-                    <Button x:Name="addToSalesBtn"  Content="Списать товар(ы)" IsEnabled="False" Grid.Column="1" Margin="10,430,10,10"/>
+                    <Button x:Name="addToSalesBtn"  Content="Списать товар(ы)" IsEnabled="False" Grid.Column="1" Margin="10,0,10,10" Height="37" VerticalAlignment="Bottom"/>
                 </Grid>
             </TabItem>
             <TabItem Header="Analytics" Height="22" VerticalAlignment="Top">
-                <Grid Background="#FFE5E5E5"/>
+                <Grid Background="#FFE5E5E5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="341*"/>
+                        <ColumnDefinition Width="100*"/>
+                    </Grid.ColumnDefinitions>
+                    <oxy:PlotView x:Name="PlotView"/>
+                    <TextBlock Grid.Column="1" Margin="10,10,10,0" TextWrapping="Wrap" Text="Название товара для прогноза" TextAlignment="Center" VerticalAlignment="Top" Height="23"/>
+                    <ComboBox x:Name="AnalyticsComboBox" Grid.Column="1" Margin="10,38,10,0" VerticalAlignment="Top" SelectionChanged="AnalyticsComboBox_SelectionChanged"/>
+                    <TextBlock Grid.Column="1" Margin="10,82,10,0" TextWrapping="Wrap" Text="Период времени" TextAlignment="Center" VerticalAlignment="Top" Height="20"/>
+                    <Calendar x:Name="analyticsCalendar" Margin="10,107,10,0" VerticalAlignment="Top" Height="168" RenderTransformOrigin="0.34,0.408" Grid.Column="1" SelectionMode="SingleRange" SelectedDatesChanged="AnalyticsCalendar_OnSelectedDatesChanged"/>
+                    <Button x:Name="writeToJornalBtn" Content="Записать в журнал" Grid.Column="1" Margin="10,0,10,48" RenderTransformOrigin="0.583,1.327" Click="WriteToJornalBtn_OnClick" Height="33" VerticalAlignment="Bottom"/>
+                    <Button x:Name="calculateBtn" Content="Рассчитать" Grid.Column="1" Margin="10,0,10,10" RenderTransformOrigin="0.583,1.327" Click="CalculateBtn_Click" Height="33" VerticalAlignment="Bottom" IsEnabled="False"/>
+                </Grid>
             </TabItem>
         </TabControl>
     </Grid>

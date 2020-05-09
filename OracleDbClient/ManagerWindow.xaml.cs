@@ -1,18 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
+using System.Data;
+using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using Oracle.ManagedDataAccess.Client;
+using OxyPlot;
+using OxyPlot.Axes;
+using OxyPlot.Series;
+
 
 namespace OracleDbClient
 {
@@ -48,16 +45,24 @@ namespace OracleDbClient
         private List<WhItem> wh2Items;
         private List<SaleItem> itemsOnSale;
         private Dictionary<int, string> goodsDictionary;
+        private List<string> jornalLogs;
+
+        private const string JORNAL_FILE_NAME = "jornal.txt";
 
         public ManagerWindow()
         {
+            jornalLogs = new List<string>();
             InitializeComponent();
+            UpdateAll();
+        }
 
+        void UpdateAll()
+        {
             UpdateGoodsTableView();
             UpdateWh1View();
             UpdateWh2View();
             UpdateSalesView();
-
+            UpdateAnalyticsView();
         }
 
         #region GoodsView
@@ -121,7 +126,7 @@ namespace OracleDbClient
                 MessageBox.Show("Имена товаров должны быть уникальными");
             }
 
-            UpdateGoodsTableView();
+            UpdateAll();
         }
 
         private void AddValBtn_Click(object sender, RoutedEventArgs e)
@@ -141,7 +146,7 @@ namespace OracleDbClient
             command.Connection = OracleDbManager.GetConnection();
             var oraReader = command.ExecuteReader();
 
-            UpdateGoodsTableView();
+            UpdateAll();
         }
 
         private void UpdateGoodsTableView()
@@ -276,7 +281,7 @@ namespace OracleDbClient
             command.Connection = OracleDbManager.GetConnection();
             var oraReader = command.ExecuteReader();
 
-            UpdateWh1View();
+            UpdateAll();
         }
 
         private void AddToWh1Btn_Click(object sender, RoutedEventArgs e)
@@ -289,7 +294,7 @@ namespace OracleDbClient
             command.Connection = OracleDbManager.GetConnection();
             var oraReader = command.ExecuteReader();
 
-            UpdateWh1View();
+            UpdateAll();
         }
 
         private void DeleteFromWh1Btn_Click(object sender, RoutedEventArgs e)
@@ -410,7 +415,7 @@ namespace OracleDbClient
             command.Connection = OracleDbManager.GetConnection();
             var oraReader = command.ExecuteReader();
 
-            UpdateWh2View();
+            UpdateAll();
         }
 
         private void AddToWh2Btn_Click(object sender, RoutedEventArgs e)
@@ -423,7 +428,7 @@ namespace OracleDbClient
             command.Connection = OracleDbManager.GetConnection();
             var oraReader = command.ExecuteReader();
 
-            UpdateWh2View();
+            UpdateAll();
         }
 
         private void DeleteFromWh2Btn_Click(object sender, RoutedEventArgs e)
@@ -436,7 +441,7 @@ namespace OracleDbClient
             command.Connection = OracleDbManager.GetConnection();
             var oraReader = command.ExecuteReader();
 
-            UpdateWh2View();
+            UpdateAll();
         }
 
         #endregion
@@ -563,13 +568,175 @@ namespace OracleDbClient
             }
 
             // update sales view after all
-            UpdateSalesView();
+            UpdateAll();
         }
 
         #endregion
 
         #region AnalyticsView
 
+        private void UpdateAnalyticsView()
+        {
+            List<string> promList = new List<string>();
+            foreach (var item in itemsOnSale)
+            {
+                var f = true;
+                foreach (var val in promList)
+                    if (val == item.Name)
+                        f = false;
+                if (f)
+                    promList.Add(item.Name);
+            }
+            AnalyticsComboBox.ItemsSource = promList;
+        }
+
+
+        private int getSoldCountForPeriod(DateTime start, DateTime end, string goodName)
+        {
+            start = start.AddHours(1);
+            end = end.AddHours(1);
+            OracleConnection connection = OracleDbManager.GetConnection();
+            OracleCommand command = connection.CreateCommand();
+            command.CommandType = CommandType.StoredProcedure;
+            command.CommandText = "demand_count_by_name";
+            command.Parameters.Add("start_time", OracleDbType.Varchar2).Value = start.ToString();
+            command.Parameters.Add("end_time", OracleDbType.Varchar2).Value = end.ToString();
+            command.Parameters.Add("good_name", OracleDbType.Varchar2).Value = goodName;
+            command.Parameters.Add("count_", OracleDbType.Int32).Direction = ParameterDirection.Output;
+            command.ExecuteNonQuery();
+
+            int result = int.Parse(command.Parameters["count_"].Value.ToString());
+            OracleDbManager.CloseConnection();
+
+            return result;
+        }
+
+        private void CalculateBtn_Click(object sender, RoutedEventArgs e)
+        {
+            // actions lock
+            calculateBtn.IsEnabled = false;
+            writeToJornalBtn.IsEnabled = false;
+
+            var startDate = analyticsCalendar.SelectedDates[0];
+            var endDate = analyticsCalendar.SelectedDates[analyticsCalendar.SelectedDates.Count - 1];
+            var dateList = analyticsCalendar.SelectedDates;
+
+            List<DateTime> dates = new List<DateTime>();
+            List<int> values = new List<int>();
+
+            // Get demand of good for each day
+            if (startDate > endDate)
+                dateList.Reverse();
+            for (int i = 0; i < dateList.Count - 1; i++)
+            {
+                dates.Add(dateList[i]);
+                values.Add(getSoldCountForPeriod(dateList[i], dateList[i+1], AnalyticsComboBox.Text));
+            }
+
+            // Calculate prognosis
+            List<int> promValues = new List<int>();
+            foreach (var val in values)
+                promValues.Add(val);
+            while (promValues.Count > 2)
+            {
+                for (int i = 0; i < promValues.Count - 1; i++)
+                    promValues[i] = (promValues[i] + promValues[i + 1]) / 2;
+
+                promValues.RemoveAt(promValues.Count - 1);
+            }
+
+            // Write calculations
+            var delta = promValues[1] - promValues[0];
+            for (int i = 1; i <= 7; i++)
+            {
+                dates.Add(dates[dates.Count - 1].AddDays(1));
+                if (values[values.Count - 1] + delta < 0)
+                    values.Add(0);
+                else
+                    values.Add(values[values.Count - 1] + delta);
+            }
+
+            // Make plot
+            PlotModel PlotModel = new PlotModel { Title = "Прогноз для " + AnalyticsComboBox.Text };
+            var minValue = DateTimeAxis.ToDouble(dates[0].AddHours(-2));
+            var maxValue = DateTimeAxis.ToDouble(dates[dates.Count - 1].AddHours(1));
+            var sellSeries = new LineSeries { Title = "Оригинальный спрос", MarkerType = MarkerType.Circle, Color = OxyColor.FromRgb(57, 240, 172) };
+            var prognoseSeries = new LineSeries { Title = "Прогнозируемый спрос", MarkerType = MarkerType.Square, Color = OxyColor.FromRgb(240,172,57)};
+            // write demand and prognose series
+            for (int i = 0; i < dateList.Count - 1; i++)
+            {
+                jornalLogs.Add(string.Format("+++  Demand  +++ on {0} for good <<{1}>> is {2}", dates[i].ToString(), AnalyticsComboBox.Text, values[i]));
+                sellSeries.Points.Add(new DataPoint(DateTimeAxis.ToDouble(dates[i]), values[i]));
+            }
+            for (int i = dateList.Count - 2; i < dates.Count; i++)
+            {
+                jornalLogs.Add(string.Format("??? Prognose ??? on {0} for good <<{1}>> is {2}", dates[i].ToString(), AnalyticsComboBox.Text, values[i]));
+                prognoseSeries.Points.Add(new DataPoint(DateTimeAxis.ToDouble(dates[i]), values[i]));
+            }
+
+            // establish data axis
+            PlotModel.Axes.Add(new DateTimeAxis
+                { Position = AxisPosition.Bottom, Minimum = minValue, Maximum = maxValue, StringFormat = "MM/dd/yyyy" });
+            // draw plot
+            PlotModel.Series.Add(sellSeries);
+            PlotModel.Series.Add(prognoseSeries);
+            PlotView.Model = PlotModel;
+
+            // actions enable
+            calculateBtn.IsEnabled = true;
+            writeToJornalBtn.IsEnabled = true;
+        }
+
+        private void AnalyticsComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            analytictsBtnDisableEnable(e.AddedItems[0] as string);
+        }
+
+        private void AnalyticsCalendar_OnSelectedDatesChanged(object sender, SelectionChangedEventArgs e)
+        {
+            analytictsBtnDisableEnable(AnalyticsComboBox.Text);
+        }
+
+        private void analytictsBtnDisableEnable(string goodName)
+        {
+            if (analyticsCalendar.SelectedDates.Count <= 1)
+            {
+                calculateBtn.IsEnabled = false;
+                return;
+            }
+
+            if (goodName == "")
+            {
+                calculateBtn.IsEnabled = false;
+                return;
+            }
+
+            calculateBtn.IsEnabled = true;
+        }
+
         #endregion
+
+        private void WriteToJornalBtn_OnClick(object sender, RoutedEventArgs e)
+        {
+            // actions lock
+            writeToJornalBtn.IsEnabled = false;
+            calculateBtn.IsEnabled = false;
+
+            // append write to file
+            using (var jornalFile = new FileStream(JORNAL_FILE_NAME, FileMode.Append))
+            { 
+                foreach (var str in jornalLogs)
+                {
+                    byte[] array = System.Text.Encoding.Default.GetBytes(str + '\n');
+                    jornalFile.Write(array, 0, array.Length);
+                }
+            }
+            // Clear logs, that was wrote to file 
+            jornalLogs.Clear();
+
+            // actions enable
+            writeToJornalBtn.IsEnabled = true;
+            calculateBtn.IsEnabled = true;
+        }
     }
 }
