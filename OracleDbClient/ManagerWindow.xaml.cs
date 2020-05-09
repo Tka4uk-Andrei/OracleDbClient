@@ -70,20 +70,13 @@ namespace OracleDbClient
         private void OnGoodsSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             Good good = goodsList.SelectedItem as Good;
-            if (good != null)
-            {
-                changeValBtn.Visibility = Visibility.Visible;
-                oldName = good.Name;
-                goodNameTextBox.Text = good.Name;
-                priorityTextBox.Text = good.Priority.ToString();
-            }
-            else
-            {
-                changeValBtn.Visibility = Visibility.Hidden;
-                addValBtn.Visibility = Visibility.Hidden;
-                goodNameTextBox.Text = "";
-                priorityTextBox.Text = "";
-            }
+
+            changeValBtn.Visibility = Visibility.Visible;
+            addValBtn.Visibility = Visibility.Hidden;
+
+            oldName = good.Name;
+            goodNameTextBox.Text = good.Name;
+            priorityTextBox.Text = good.Priority.ToString();
         }
 
         private void GoodsTextBoxs_TextChanged(object sender, TextChangedEventArgs e)
@@ -93,17 +86,23 @@ namespace OracleDbClient
             {
                 changeValBtn.Visibility = Visibility.Hidden;
                 addValBtn.Visibility = Visibility.Hidden;
-                goodsList.SelectedItem = null;
-            }
-            else if (good != null)
-            {
-                changeValBtn.Visibility = Visibility.Visible;
-                addValBtn.Visibility = Visibility.Visible;
             }
             else
             {
-                changeValBtn.Visibility = Visibility.Hidden;
-                addValBtn.Visibility = Visibility.Visible;
+                var flag = false;
+                foreach (var goodName in goodNames)
+                    if (goodName == goodNameTextBox.Text)
+                        flag = true;
+                if (flag)
+                {
+                    changeValBtn.Visibility = Visibility.Visible;
+                    addValBtn.Visibility = Visibility.Hidden;
+                }
+                else
+                {
+                    changeValBtn.Visibility = Visibility.Hidden;
+                    addValBtn.Visibility = Visibility.Visible;
+                }
             }
         }
 
@@ -714,8 +713,6 @@ namespace OracleDbClient
             calculateBtn.IsEnabled = true;
         }
 
-        #endregion
-
         private void WriteToJornalBtn_OnClick(object sender, RoutedEventArgs e)
         {
             // actions lock
@@ -724,7 +721,7 @@ namespace OracleDbClient
 
             // append write to file
             using (var jornalFile = new FileStream(JORNAL_FILE_NAME, FileMode.Append))
-            { 
+            {
                 foreach (var str in jornalLogs)
                 {
                     byte[] array = System.Text.Encoding.Default.GetBytes(str + '\n');
@@ -738,5 +735,7 @@ namespace OracleDbClient
             writeToJornalBtn.IsEnabled = true;
             calculateBtn.IsEnabled = true;
         }
+
+        #endregion
     }
 }
