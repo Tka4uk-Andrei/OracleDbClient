@@ -3,6 +3,7 @@
 This is client for oracle database written on C#. 
  - As GIU framework there is using [WPF](https://en.wikipedia.org/wiki/Windows_Presentation_Foundation); 
  - Connection to DB is realized by using .NET driver [Oracle.ManagedDataAccess](https://www.nuget.org/packages/Oracle.ManagedDataAccess/19.6.0);
+ - As plot tool it uses [OxyPlot](https://oxyplot.github.io/) library. It also availible from [NuGet](https://www.nuget.org/packages/OxyPlot.Core/)
 
 ---
 ## Full Project description (russian)
