@@ -604,7 +604,10 @@ namespace OracleDbClient
             command.Parameters.Add("count_", OracleDbType.Int32).Direction = ParameterDirection.Output;
             command.ExecuteNonQuery();
 
-            int result = int.Parse(command.Parameters["count_"].Value.ToString());
+            int result;
+            if (!int.TryParse(command.Parameters["count_"].Value.ToString(), out result))
+                result = 0;
+
             OracleDbManager.CloseConnection();
 
             return result;
@@ -675,7 +678,7 @@ namespace OracleDbClient
 
             // establish data axis
             PlotModel.Axes.Add(new DateTimeAxis
-                { Position = AxisPosition.Bottom, Minimum = minValue, Maximum = maxValue, StringFormat = "MM/dd/yyyy" });
+                { Position = AxisPosition.Bottom, Minimum = minValue, Maximum = maxValue, StringFormat = "MM/dd/yyyy"});
             // draw plot
             PlotModel.Series.Add(sellSeries);
             PlotModel.Series.Add(prognoseSeries);
